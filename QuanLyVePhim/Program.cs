@@ -12,58 +12,32 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 ConfigurationManager configuration = builder.Configuration;
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
-{
-    options.SaveToken = true;
-    options.RequireHttpsMetadata = false;
-    options.TokenValidationParameters = new TokenValidationParameters()
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:ScretKey"])),
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = false,
-        ValidAudience = configuration["JWT:ValidAudience"],
-        ValidIssuer = configuration["JWT:ValidIssuer"],
-    };
-});
-builder.Services.AddSingleton(configuration);
-builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddControllers();
-builder.Services.AddDbContext<ApplicationDbContext>(op => op.UseSqlServer("name:ConnectionStrings:Connect"));
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen();
+builder.Services.AddAuthentication(op =>
 {
-    c.SwaggerDoc("v3", new OpenApiInfo { Title = "TEST API AUTHENTICATION AND AUTHORZATION", Version = "v3" });
-    // Define the Bearer token scheme for Swagger
-    var securityScheme = new OpenApiSecurityScheme
+    op.DefaultAuthenticateScheme=JwtBearerDefaults.AuthenticationScheme;
+    op.DefaultChallengeScheme=JwtBearerDefaults.AuthenticationScheme;
+    op.DefaultScheme=JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(ops =>
+{
+    ops.SaveToken = true;
+    ops.RequireHttpsMetadata = false;
+    ops.TokenValidationParameters = new
+        Microsoft.IdentityModel.Tokens.TokenValidationParameters
     {
-        Name = "JWT Authentication",
-        Description = "Enter your Bearer token",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer", // Case insensitive
-        BearerFormat = "JWT",
-        Reference = new OpenApiReference
-        {
-            Id = JwtBearerDefaults.AuthenticationScheme,
-            Type = ReferenceType.SecurityScheme
-        }
-    };
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:ValidAudience"],
+        ValidIssuer = builder.Configuration["Jwt:ValidIssuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]))
 
-    c.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, securityScheme);
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        { securityScheme, new string[] { } }
-    });
+    };
 });
+builder.Services.AddDbContext<ApplicationDbContext>(op => op.UseSqlServer("name:ConnectionStrings:Connect"));
+
 
 
 var app = builder.Build();
@@ -73,7 +47,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v3/swagger.json", "Your API V3");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API V1");
     });
 
 }

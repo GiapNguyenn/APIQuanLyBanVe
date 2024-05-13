@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuanLyVePhim.Data;
 
 namespace QuanLyVePhim.Controllers
 {
@@ -22,5 +23,6 @@ namespace QuanLyVePhim.Controllers
                 Console.WriteLine($"lỗi Application {ex.Message}");
             }
         }
+        public DbSet<NguoiiDung>NguoiDungs { get; set; }
     }
 }
