@@ -1,4 +1,4 @@
-
+﻿
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -7,36 +7,52 @@ using QuanLyVePhim.Controllers;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var configuration = builder.Configuration;
 // Add services to the container.
 
-
-ConfigurationManager configuration = builder.Configuration;
-
-builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddAuthentication(op =>
+builder.Services.AddSwaggerGen(c =>
 {
-    op.DefaultAuthenticateScheme=JwtBearerDefaults.AuthenticationScheme;
-    op.DefaultChallengeScheme=JwtBearerDefaults.AuthenticationScheme;
-    op.DefaultScheme=JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(ops =>
-{
-    ops.SaveToken = true;
-    ops.RequireHttpsMetadata = false;
-    ops.TokenValidationParameters = new
-        Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    c.SwaggerDoc("v3", new OpenApiInfo { Title = "Your API", Version = "v3" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidAudience = builder.Configuration["Jwt:ValidAudience"],
-        ValidIssuer = builder.Configuration["Jwt:ValidIssuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]))
-
-    };
+        In = ParameterLocation.Header,
+        Description = "Vui long bo chuoi ket noi tai day",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+    {
+        new OpenApiSecurityScheme {
+            Reference = new OpenApiReference {
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        new string[] { }
+    }
+    });
 });
-builder.Services.AddDbContext<ApplicationDbContext>(op => op.UseSqlServer("name:ConnectionStrings:Connect"));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.SaveToken = true;
+        options.RequireHttpsMetadata = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidIssuer = configuration["Jwt:ValidIssuer"],
+            ValidAudience = configuration["Jwt:ValidAudience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SecretKey"])),
+            ClockSkew = TimeSpan.Zero // Giảm thiểu độ trễ của token
+        };
+    });
+builder.Services.AddControllers();
+builder.Services.AddDbContext<ApplicationDbContext>(op => op.UseSqlServer("name=ConnectionStrings:Connect"));
 
 
 
@@ -47,15 +63,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API V1");
+        c.SwaggerEndpoint("/swagger/v3/swagger.json", "Your API V3");
     });
-
 }
-
 app.UseHttpsRedirection();
+app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
 
 app.Run();
