@@ -24,5 +24,8 @@ namespace QuanLyVePhim.Controllers
             }
         }
         public DbSet<NguoiiDung>NguoiDungs { get; set; }
+        public DbSet<NhanVien>NhanViens { get; set; }
+       
+       
     }
 }
