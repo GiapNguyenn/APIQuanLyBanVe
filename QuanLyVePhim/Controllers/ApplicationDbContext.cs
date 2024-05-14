@@ -23,6 +23,7 @@ namespace QuanLyVePhim.Controllers
                 Console.WriteLine($"lỗi Application {ex.Message}");
             }
         }
-        public DbSet<NguoiiDung>NguoiDungs { get; set; }
+        public DbSet<NguoiDung>NguoiDungs { get; set; }
+        public DbSet<Phim> Phims { get; set; }
     }
 }
